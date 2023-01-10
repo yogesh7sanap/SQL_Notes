@@ -1,0 +1,1776 @@
+ pg_1_1
+
+================================================================================================================
+
+Postgresql
+	open source RDBMS owned by Enterprise DB
+
+	Data case-sensitive 
+
+Tables
+	collections of rows and columns
+	used to store data
+	->create table table_name(col_name data_type, col_name data_type......)
+
+psql
+	command link utility to connect to postgre Database
+	windows + r => cmd =>command prompt will open
+------------------------------------------------------------------------------------	
+	->psql -Upostgres
+		user [Upostgres] created at the time of installation
+	->enter password which is used at the time of installation
+
+	-> \l 
+		gives list of databases
+	
+
+	-> create database innov;
+
+	-> \l
+
+	-> \c [Database name]
+		to connect to the given database
+
+	->\d
+		to list out all tables in a database which you are connected
+
+
+	-> create table test_table
+		(id int, name varchar(100));
+
+	->\d
+	
+	one database can have multiple schemas
+
+	schema is container of objects(tables,functions,indexes etc)
+
+	'public' default schema for each database
+
+	->\d [table_name]
+		describes table info
+
+	->select * from [table_name]
+		to get the data from the table
+
+	->insert into [table_name](id,name) values(1,'a'),(2,'b'),(3,'c');
+
+	->select * from test_table
+
+	->insert into test_table values(4,'d')
+
+	->insert into test_table(id) values(5)
+		
+		value inserted in a name column will be null
+		
+		'null' => value not yet defined
+
+	->select * from test_table
+
+	->select * from test_tales where name is null
+		gives list of rows where name cloumn value is null
+
+	->select * from test_table where name is not null
+		gives list of rows where name cloumn value is not null
+
+	->select version();
+		To check version of database
+
+	pgadmin
+		UI tool for running queries and creating tables,schema's etc
+		select query and press f5 => to run the query
+
+----------------------------------------------------------------------------------
+Constraints : 
+
+Primary key
+	unique+not null
+	one table cannot have more than 1 primary key
+
+	->create table test_pk (id int primary key, name varchar(100));
+
+	-> \d test_pk
+		by default a btree index gets created on 'id' column
+
+	->insert into test_pk values(1, 'a');
+	
+	->insert into test_pk values(1,'b');
+		fails 
+
+	->insert into test_pk values(null,'c');
+		fails
+
+
+
+	->create table test_pk_alt(id int, name varchar(100));
+
+	->\d test_pk_alt
+
+	->alter table test_pk_alt add primary key (id)
+		primary key added
+
+	->alter table test_pk_alt drop constraint test_pk_alt_pkey;
+		primary key dropped
+
+	->insert into test_pk_alt values(1,'a'),(1,'b');
+
+	->alter table test_pk_alt add primary key (id)
+		fails as column contains duplicate values
+
+Unique Key
+	contains only unique values( no duplicates)
+	can have null value
+	can have more than 1 unique key
+	
+	How many Null values a column can have
+		Unique key constraints can accept only one NULL value for column
+	
+		You can insert NULL values into columns with the UNIQUE constraint 
+		because NULL is the absence of a value,so it is never equal to 
+		other NULL values and not considered a duplicate value.
+
+	->create table test_uk(id int unique,name varchar(100));
+
+	->\d test_uk
+
+		contains 'test_uk_id_kay' Unique constraint, btree(id)
+
+	-> insert into test_uk(1,'a');
+
+	->insert into test_uk(1,'b'); ---fails
+
+	->insert into test_uk(null,'c'); ---works
+
+	->insert into test_uk(null,'d');---works
+
+
+Not NUll
+	null values are not allowed
+	
+	'null' is not constaint 'not null is contraint'
+	
+	->create test_nn(id int, name varchar(100) not null);
+
+	->insert into test_nn values(1,null) =>fails
+
+composite primary key
+	
+	combination of columns present in primary key containt cannot have
+	null values or duplicate value.
+	
+	individual column can have null or duplicate value
+
+	->create table test_pk_com(c1 int,c2 int, c3 varchar(100),
+		primary key(c1,c2));
+
+	->insert into test_pk_com values(1,1,'a');
+
+	->insert into test_pk_com values(1,2,'a');
+
+	->insert into test_pk_com values(2,2,'a');
+
+	->insert into test_pk_com values(2,2,'a');  ---fails
+
+
+
+Check Constraint
+	using this you can restrict the end use to insert/not insert only a specific range of values to column.
+
+	checks whether values satsfies the constraint or not
+	
+	->create table test_cc(id int,gender varchar(100) check (gender in ('Male','Female')));
+
+	->\d test_cc
+		contains 'test_cc_gender_check' constraint
+		exact same value is needed e.g. male is not allowed only Male is allowed
+ 
+	->insert into test_cc(1,'s') ; ---fails
+
+	->insert into test_cc(1,'Male'); ---works
+
+	->drop table test_cc 	
+
+	->create table test_cc (id int ,gender varchar(100) check (lower(gender) in ('male','female')));
+
+	->create table test_cc2(eid int ,ename varchar(100),salary int check (salary>0));
+
+	->insert into test_cc2 values(1,'a',0); ---fails
+
+	->insert into test_cc2 values(1,'a',100); ---works
+
+	multiple check constraints are allowed
+
+	->create table test_cc3(deptname varchar(100),salary int,
+		check((deptname='HR' and salary>100) or (deptname='IT' and salary>10000)));
+
+
+	->insert into test_cc3 values('HR','a',200); --works
+
+	->insert into test_cc3 values( 'IT', 'b',200); --fails
+
+	->insert into test_cc3 values('IT','c', 20000); --works
+
+
+
+Foreign Key-
+	is also called as parent child relationship or referential integrity 
+	constraint which means a value can exist in child table only if the value exists in parent
+
+	to be able to create a foreign key in child table we need to define the parent table column as 
+	either a primary key or unique key
+
+
+	->null value will be allowed to be inserted in foreign key column of child table
+		 irrespective of whether primary key in parent table
+
+	->if want to delete or truncate from parent table first child table having values from 
+		primary key column must be deleted first else it will fail
+	
+	->we directly delete or truncate child table as there is no dependency
+
+
+
+Default value 
+	->defines what value a column will take if an explicit value is not given during the insert command.
+
+	->create table test_default( id int, name varchar(100), salary int default 1000);
+
+	->insert into test_default(id,name) values(1,'a');
+
+	->insert into test_default(id,name,salary) values(1,'a',null)
+		if you expllictly defined null then insert will happen for that null value not the 1000 value.
+
+
+Operators
+	=
+	!= or <>
+	>
+	<
+	>=
+	<=
+	in
+	not in
+	between
+	not between
+	is null
+	is not null
+	>any or >all
+	<any or <all
+	<=any or <=all
+	>=any or >=all
+	=any or =all
+	like
+	not like
+	exists 
+	not exists
+
+	>all
+	->select * from test_table where id>all (select deptid from t_parent);
+
+	like
+	
+	-> '%h' , 'h%' , '%h%' , 'h_'
+
+------------------------------------------------
+SQL Commands
+	select
+		->read data from tables
+	
+	insert
+		->to add new records
+	update
+		->to edit existing records
+	delete
+		->to remove existing records from the table.
+	
+	alter table
+		->add columns
+		->drop columns
+		->change data type
+		->change null to not null and vice versa
+		->add default value
+		->rename table
+
+
+SQL- Structured query language
+
+DDL- Data definition language
+	->create table, alter table, drop table
+
+DML- Data Manipulation Language
+	->insert
+	->Delete
+	->update
+	->Merge- combination of update/Delete/insert
+
+DCL- Data Control Language
+	->grant
+	->revoke
+		
+TCL -Transaction control language
+	->start transaction
+	->commit
+	->rollback
+	->Normal operations like insert,update,delete ,merge,select are 
+		auto commited they cannot be rollbacked 
+		for rolling back we need to start the transaction first
+
+DRL -data read language
+	->Select- use to read data
+
+
+----------------------------------------------
+
+Joins- Joins are used to retrieve columns from multiple tables in the same query
+
+	->Cross join
+		->oin without any condition
+		->ansi syntax
+			->select * from t1 cross join t2.
+		->normal
+			->select * from t1 join t2
+			->select * from t1,t2
+
+	->equi join
+		->inner join
+			->by default its inner join
+			->select * from t1 join t2 on t1.c1=t2.c1;
+			->select * from t1,t2 where t1.c1=t2.c1; --old syntax
+				
+			->ansi syntax
+				->select * from t1 inner join t2 on t1.c1=t2.c1
+		->outer join
+			->left outer join
+				->all rows from left side table and only matching from right side table
+				->null values incase of non matching rows
+
+				->select * from t1 left join t2 on t1.c1=t2.c1; --ansi syntax
+			->right outer join
+				->all rows from right side table and only matching from left side table
+				->null values incase of non matching rows
+
+				->select * from t1 right join t2 on t1.c1=t2.c1; --ansi syntax
+			->full outer join
+				->all rows from left and right table
+				->null values incase of non matching rows
+
+				->select * from t1 full join t2 on t1.c1=t2.c1; --ansi syntax
+	->Non-equi Joins
+
+--------------------------------------------------
+
+Set Operators
+
+	Pre-requisites for using Set Operators
+		->Both the queries should have same number of columns
+		->Corresponding data types of the columns in both the queries should be same/compatible  
+
+	->Union
+		A={1,2,3}
+		B={3,4,5}
+		A Union B= {1,2,3,4,5} -Need to perform sort to remove duplicates
+		->(select id from A) Union (select id from B) 		
+
+		B Union A= {3,4,5,1,2} -Need to perform sort to remove duplicates
+		->(select id from B) Union (select id from A) 
+
+		
+	->Union all
+		A={1,2,3}
+		B={3,4,5}
+		A Union All B= {1,2,3,3,4,5} - Doesn't remove duplicates so no sort is required --Faster than Union
+		->(select id from A) Union all (select id from B) 
+
+		B Union All A= {3,4,5,1,2,3} - Doesn't remove duplicates so no sort is required --Faster than Union
+		->(select id from B) Union all (select id from A) 
+
+	->Intersect -Not supported in MySQL
+		A={1,2,3}
+		B={3,4,5}
+		A Intersect B= {3} -Just the common elements
+		->(select id from A) Intersect (select id from B) 
+
+		B Intersect A= {3} -Just the common elements
+		->(select id from B) Except (select id from A) 
+
+	->Minus/Except -Not Supported in MySQL
+		->Minus works in sqlserver
+		->Except works in postgresql 
+		A={1,2,3}
+		B={3,4,5}
+		A minus B= {1,2} -Elements of A which are not in B
+		->(select id from A) Except (select id from B) 
+
+		B Minus A= {4,5} -Elements of B which are not in A
+		->(select id from B) Except (select id from A) 
+
+
+--------------------------------------------------
+
+Aggregate Functions
+
+	->count - works on all data types
+	
+		->count(*)/ count(1) will count number of records in the table.
+			->select count(*) from A;
+
+		->count(col_name) will count the number of not null values in the column of that table.
+			->select count(id) from B;
+
+	->sum - works only with numeric data types
+		->select sum(v1) from B;
+
+	->Max - works with all data types
+		->select Max(name) from B;
+
+	->Min - works with all data types
+		->select Min(name) from C;
+
+	->Avg - only numeric fields
+		->select avg(v1) from test_table;
+
+
+---------------------------------------
+
+Subquery
+
+	->When we use a query instead of a value in the main query then it is called as a sub-query
+
+	->select * from t1 where c1 in (select c1 from t2);
+
+	->joins and subqueries are pretty much head to head in terms of execution speed depends
+		as in some cases joins work faster and in some cases subquery will work faster.
+	
+		->explain select * from t1 where c1 in (select c1 from t2);
+		->explain select * from t1 join t2 on t1.c1=t2.c1;
+
+	->subquery internally uses joins only in postgresql.
+
+
+-------------------------------------------------
+
+Group By 
+	->this clause is used to perform aggregation based on some columns.
+
+	->select sum(salary) from emp;
+	->select ename,deptname,salary from emp join dept on emp.deptid = dept.deptid
+
+	->select deptname,sum(salary) from emp join dept on emp.deptid=dept.deptid group by deptname;
+	->select deptname,count(eid) from emp join dept on emp.deptid=dept.deptid group by deptname;
+	
+--------------------------------------------------
+Having 
+	->this clause is used to apply filter on aggregate columns.
+	->having clause can only be used if you have group by clause.
+
+	->select deptname, sum(salary) from emp join dept on emp.deptid=dept.deptid group by deptname having sum(salary)>50000; 
+
+--------------------------------------------------
+Order by
+	->this clause sort the output in either descending or ascending order
+	->Order by is always the last clause in the query.
+	->Only limit clause can come after order by clause.
+	->By default it will sort in ascending order
+	->order by [col_name] asc/desc
+
+	->select deptname,ename,salary from emp join dept on emp.deptid=dept.deptid order by deptname,salary desc;
+
+	->select deptname,ename,,salary from emp join dept on emp.deptid=dept.deptid order by salary desc
+
+---------------------------------------------
+
+Where vs Having
+	->Where clause is used to apply filters on non-aggreate columns
+	->Having is used to apply filters on aggregate columns (sum,max,min,avg etc)
+	->Where clause can be used without group by clause 
+	->Having clause can be used only with group by clause.
+
+On 
+	->this clause is used to specify the joining condition when you use inner or outer join in the ansi syntax of joins 
+
+------------------------------------------------
+
+Column Alias and Table Alias
+	->Column Alias is name given to the column in the query output
+		->select ename as EmployeeName from emp;
+		->select ename EmployeeName from emp;
+	->Table Alias is used to give some name to your tables just for query purpose
+		->select ename,salary from emp e join dept d on e.deptid=d.deptid;
+
+------------------------------------------------
+
+Limit and Offset
+	->Limit will limit the no. of rows displayed as output
+		->select ename,salary from emp order by salary desc limit 5;
+			->shows the 5 rows from start of output
+
+	->Offset will skip the no. of rows from start of output
+		->select ename,salary from emp order by salary desc limit 5 offset 1;
+			->skip the 1 row of output shows 5 records
+
+
+-----------------------------------------------
+Create Employee and Department Tables
+
+->create table dept (deptid int primary key, deptname varchar(10));
+->create table emp ( eid int primary key, ename varchar(20),salary int, deptid int references dept(deptid));
+
+1. Display the name of all employees whose salary is between 500 and 1300.
+
+	->select ename from emp where salary in between 500 and 1300;
+	->select ename from emp where salary >=500 and salary<=1300;
+
+2. Display the name of all employees who are in HR dept
+
+	->select ename from emp where deptid in (select deptid from dept where deptname='HR');	
+	->select deptname,ename from emp join dept on emp.deptid=dept.deptid where deptname='HR';  
+
+3. Display the name of all the dept and count of all the employees in that dept.
+		
+	->select d.deptname,count(e.eid) from emp e right join dept d on e.eid=d.deptid group by d.deptname;
+
+4. Display the name , deptname and salary of the employee whose salary is highest.
+	
+	->select e.ename,d.deptname,e.salary from emp e join deptname d on e.eid=d.deptid where eid =
+	select (eid from emp where salary= (select max(salary) from emp));
+
+	---correct
+	->select ename,deptname,salary from emp join dept on emp.deptid=dept.deptid order by salary desc limit 1
+		
+
+5. Display the name , deptname and salary of the employee whose salary is lowest.
+
+	->select e.ename,d.deptname,e.salary from emp e join deptname d on e.eid=d.deptid where eid in 
+	select (eid from emp where salary= (select min(salary) from emp));
+
+	---correct
+	->select enamedeptname,salary from emp join dept on emp.deptid=dept.deptid order by salary limit 1
+
+6. Display the name , deptname of employee whose salary is second highest.
+
+	->select e.ename,d.deptname,e.salary from emp e join deptname d on e.eid=d.deptid where eid in 
+	select (eid from emp where salary= (select max(salary) from emp where salary <> (select max(salary) from emp)));
+
+	---correct
+	->select ename,deptname,salary from emp join dept on emp.deptid=dept.deptid order by salary desc limit 1 offset 1
+
+7. Display the name , deptname of top five earning employees.
+
+	---correct
+	->select distinct ename,deptname,salary from emp join dept on emp.deptid=dept.deptid order by salary desc limit 5
+
+8. Display the deptname, name of top 5 earning employees from each dept.
+	---inline view
+	->select * from
+		(select ename,deptname,salary ,row_number() over(partition by deptname order by salary desc) as rn 
+		from emp join dept on emp.deptid=dept.deptid) as t
+	 where rn<=5;
+
+9. Display t he avg salary of each dept.
+
+	->select d.deptname,avg(e.salary) as avg_salary from emp e right join dept d on e.eid=d.deptid group by d.deptname;
+
+10.Display the min and max salary of each dept.
+
+	->select d.deptname,min(e.salary) as min_salary, max(e.salary) as max_salary from 
+		emp e right join dept d on e.eid=d.deptid group by d.deptname;
+
+
+
+
+------------------------------------------
+Inline Views
+
+	->When you write a query instead of a table name in the from cluase
+	->Giving a table alias for the query is mandatory.
+
+	->select * from (Select ename,,salary from emp order by salary desc limit 5) as t order by salary
+
+
+	---inline view
+	->select * from
+		(select ename,deptname,salary ,row_number() over(partition by deptname order by salary desc) as rn 
+		from emp join dept on emp.deptid=dept.deptid) as t
+	 where rn<=5;
+
+------------------------------------------
+select query syntax
+
+	->select column list(c1,c2...)
+		From
+		Table_List(t1,t2,t3)
+		on
+
+		where
+
+		Group by Cluase
+		Having Cluase
+		order by
+		limit
+		offset
+
+
+-------------------------------------------
+Select Query Order of Execution Flow
+
+->Joins or where clause will be applied
+	->if you have multiple conditions in where clause then depending the condition it will be applied
+
+->Group by clause
+
+->Aggregation will be performed (sum,max,min etc)
+
+->Having clause application
+
+->Order by clause
+
+->Limit and offset
+
+-------------------------------------------
+
+Self Join
+	->In self join a table is joined with itself.
+
+	emp_mgr
+	
+	eid	ename	mgr_id
+	1	a	4
+	2	b	4
+	3	c	4
+	4	d	4
+	5	e	6
+	6	f	6
+	7	g	6
+
+	Output
+
+	Mgr_ID	Mgr_Name	EID	ENAME
+	4	d		1	a
+	4	d		2	b
+	4	d		3	c
+	6	f		5	e
+	6	f		7	g
+
+
+	->select e.mgr_id,m.ename,e.eid,e.ename from emp_mgr e,emp_mgr m where e.mgr_id=m.eid and e.mgr_id<>e.eid
+
+
+
+--------------------------------------------
+
+Case Statements
+	->they are like switch statements
+
+	->Syntax:
+	
+	  case when condition1 then
+	       when condition2 then
+		.
+		.
+	       else
+	  end
+
+
+
+	->select *,( case when salary>2000 then 'very high'
+			when salary>1000 then 'High'
+			when salary>500 then 'Avg'
+			else 'low'
+		    end ) as salary_band
+	  from emp;
+-------------------------------------------
+Views 
+
+	->a logical object, a saved query , a virtual table
+	->Views doesn't occupy space for data
+	->Advantages
+		->Security- Hide specific columns or rows
+		->Reusability- Once a view is created you can reuse it 
+
+
+
+
+------------------------------------------------------
+Correlated Subquery
+	->Subqueries in which we define a relation of a column from the outer query with the column of inner query
+
+	->Correlated subqueries are generally very slow in performance 
+		because the correlated subquery gets executed as many times
+		as you have number of rows in the outer query
+
+	->select ... from outer_query where(some inner query where outerquery.column=innerquery.column)
+
+	->mostlt used with exists and not exists clause
+		->concern with whether inner query returning any row or not
+
+	->select * from dept where exists (select 1 from emp where dept.deptid= emp.deptid )
+		return department having at lease 1 employee
+	->select * from dept where not exists (select 1 from emp where dept.deptid=emp.deptid)
+		return department having no employee
+	
+
+------------------------------------------------------
+Autoincrement Columns
+
+	->AUtoincrement columns take value automatically through a sequence
+
+	->Autoincrement column as to be defined as a primary key or unique key
+
+	->create table account( accountno int primary key serial, accname varchar (100));
+
+	->auto_increment / serial/ big serial
+
+	->alter table account auto_increment=10000;
+
+			**
+			->create sequence acc_seq increment 1 start 1000;
+
+			->insert into emp(eid,ename) values( nextval( 'acc_seq'),'abc');  --eid 1000
+
+			->insert into emp(eid,ename) values( nextval( 'acc_seq'),'abc2');  --eid 1001
+
+			**
+------------------------------------------------------
+
+DMLs on Views
+	->DMLs on view are allowed with some restrictions
+	->When DMLs are performed on views the changes happen on the base table.
+	->DMLs cannot modify multiple tables through view	
+
+-----------------------------------------------
+
+Truncate vs Delete
+
+	->Truncate also delete data from the table but truncate 
+		doesn't have any where clause which means 
+		truncate will remove all the records 
+	->whereas delete can delete specific records using where cluase
+
+	->Truncate cannot be rollback e.g. Mysql,oracle and other RDBMS (in POSTGRES,sql server truncate can be rollbacked)
+
+	->delete can be rollback
+
+	->Truncate command doesn't get logged 
+
+	->delete is a logged command. 
+
+	->Logging for truncate and other DDL commands happened only at the statement level.
+
+	->truncate is faster in performace than delete
+
+	->truncate resets the auto increment value to initial value 
+		where as delete doesn't reset the auto increment value
+
+	->Delete can have a trigger but truncate cannot have a trigger
+
+	->Delete can be executed on parent table having a foreign kay but truncate cannot be
+
+
+-----------------------------------------
+
+Exists and Not Exists
+
+	->You write a query after these operators
+	
+	->If the query returns 1 or more than 1 row then the condition becomes true else the condition is set to false
+
+	->Generally are used in context with a correlated sub query
+
+	->mostlt used with exists and not exists clause
+		->concern with whether inner query returning any row or not
+
+	->select * from dept where exists (select 1 from emp where dept.deptid= emp.deptid )
+		return department having at lease 1 employee
+	->select * from dept where not exists (select 1 from emp where dept.deptid=emp.deptid)
+		return department having no employee
+	
+
+------------------------------------------
+
+Built- in Functions
+
+	->Round
+		->Round of your value to whatever decimal place you want
+
+		->select (10.3456,3)  ---10.346
+		->select (10.3456) ---10
+		->select (10.7456) ---11
+
+	->Floor
+		->Highest integer alue lower than or equal to the given number
+		->select floor(10.3456); --- 10
+		->select floor(-10.345); --- [ -11]
+
+	->Ceiling
+		->Lowest integer value greater than or equal to the given number
+		->select ceiling(10.3456); --- 11
+		->select ceiling(-10.345); --- [ -10]
+
+	->Power
+		->select power(10,2); --- 100
+
+	->SQRT
+		->select sqrt(100); --- 10
+
+	->+,-,/,*
+			
+	->Mod
+		->gives reminder value
+		->select mod(10,3); --- 1
+
+	->abs
+		->gives absolute value
+		->select abs(-100); --- 100
+
+
+------------------------------------------------
+Built-in Functions String
+
+	->Substring [substr]
+		->to get the specific set of characters from string 
+		->index starts with 1 in postgres
+		->syntax - substr('string',start,no_of_words)
+		->select substr('abcdef',2,3); ---bcd
+		->select substr('abcdef',2); ---bcdef
+		
+		->select substr('abcdef',-2); ---abcdef [doesn't work as oracle]
+		->select substr('abcdef',-2,1); ---[ gives no string]
+
+	->position[ in postgres] / [instr in othere database]
+		->locate the string in a given string
+		->gives the starting index of first occurance of string in a given string
+		->if string not found it will give zero
+		->select position('abc' in 'abcdef'); ---1
+		->select position('ce' in 'abcdef'); ---3
+		->select position('cez' in 'abcdef'); ---0
+		
+
+	->Replace
+		->syntax - replace('string','string_to_be_replaced', 'replace_with_this_string')
+		->It replaces string in a given string with other string
+		->select replace('abceedccdd','c','xyz');
+			->this will replace every occurance of c with xyz
+
+	->Left
+		->gives specific number of characters from left
+		->select left('abcdef',3); ---abc
+
+	->Right
+		->gives specific number of charachter from right
+		->select right('abcdef',3); ---def
+
+	->Ltrim
+		->removes space from left side
+		->select ltrim('	abc'); --- [abc]
+
+
+	->Rtrim
+		->removes space from right side
+		->select rtrim('	abc	'); --- [	abc]
+
+	->Trim
+		->removes spaces from both the sides
+		->select trim ('	abc	') ; --- [abc]
+
+
+	->reverse
+		->It reverses the given string
+		->select reverse('abcdef'); ---fedcba
+
+
+	->split_part
+		->syntax - split_part('string',split_with,which_part_no_you_want)
+		->select split_part('abc,def,xyz',',',3); ---xyz 		
+
+Given a string 'abc,def,xyz' we need xyz only i.e. string after last ,
+
+c1='abc,def,xyz' 
+select c1, reverse(c1),reverse(substring(reverse(c1),1,position(',' in reverse(c1))-1)); ---xyz
+
+
+
+---------------------------------------------
+Built-In Function Date and Time
+
+	->current_date(),curdate()
+		->returns current date of the system
+		->select now();
+		->select current_date;
+
+
+	->current_time(),curtime()
+		->returns current time of the system
+		->select current_time;
+
+	->Now()
+		->return current date time of the system
+		->select now();
+
+	->extract()
+		->year(date)
+			->returns the year from the given date
+			->extract (year from now()) ; ---gives current year
+
+		->month(date)
+			->returns the month from the given date
+			->extract( month from now()) ; ---gives current month 
+
+		->day(date)
+			->returns the day from the given date
+			->extract ( day from now()) ; gives current day
+
+		->Hour(time)
+			->returns hours from time
+			->extract(hour from now()); gives current hour
+
+		->Minute
+			->extract(minute from now());
+	
+		->second
+			->extract ( minute from now());
+
+		->week(date)
+			->week number of the year
+			->extract ( week from now())
+	
+	
+	->select date '2022-12-21' - integer '2';
+		->substract 2 days from date
+
+	->select current_date - integer '2';
+		->subtract 2 days from current_date
+
+	->select current_date + integer '2';
+		->add 2 days from currrent_date 
+	
+	->select current_date + interval '2 year';
+		->add 2 years from currrent_date 
+
+	->select current_date + interval '2 month';
+		->add 2 months from currrent_date 
+
+	->select current_date + interval '2 day';
+		->add 2 days from currrent_date 
+
+	->TO get the age of a person
+		->select age(now(), '1982-01-01');
+	
+	
+
+	->date_part
+		->SELECT date_part('century', TIMESTAMP '2020-01-01');
+		->SELECT date_part('dow', TIMESTAMP '2020-03-18 10:20:30') dow, date_part('doy', TIMESTAMP '2020-03-18 10:20:30') doy;
+
+	->DateDiff
+		->DateDiff ( interval, date1, date2 [, firstdayofweek] [, firstweekofyear] )
+
+
+	->Date_add
+		->DATEADD(interval, number, date)
+		->SELECT DATEADD(year, 1, '2017/08/25') AS DateAdd;
+
+	->Date_sub()
+		->DATE_SUB(date, INTERVAL value interval)
+		->SELECT DATE_SUB("2017-06-15 09:34:21", INTERVAL 15 MINUTE);
+
+
+	t	
+
+
+
+---------------------------------------------
+
+Analytical Functions -Ranking Functions
+
+	->Ranking Functions are used to assign rank to the rows based on some condition.
+	->They can be used only in 2 places-
+		1. Select column clause
+		2. Order by clause
+
+	->They have two types of paremeters that they can take
+		1. Partition by Clause 
+			--THis is an optional parameter
+		2. Order by Clause
+			--This is a mandatory paramenter
+
+	->Different types of Ranking Functions-
+		->Row_Number
+		->Rank
+		->Dense_Rank
+
+e.g.
+
+EID ENAME SALARY DEPTID  row_number() over(order by salary desc)   rank() over (order by salary desc)      dense_rank() over( order by salary desc) 
+1    a     100    1                3                                3                                         2
+2    b     200    2                1                                1                                         1
+3    c     100    1                4                                3					      2
+4    d     200    2                2                                1					      1
+5    e      50    1                7                                7                                         5
+6    f      60    2                6                                6                                         4
+7    g      70    1                5                                5                                         3
+
+
+row_number() over(order by salary desc)
+	->this assign a ranking in incremental fashion is same value then next value rank will be assigned
+
+rank() over (order by salary desc)
+	->this will assign a same rank for same values then if 2 same values will get 1 rank
+		 then next value will get 3 as a rank
+
+dense_rank() over( order by salary desc)
+	-> this will assign a same rank for same values then if 2 same values will get 1 rank
+		then next value will get 2 as a rank
+
+
+->select *, row_number() over (order by salary desc) rn,
+	rank() over (order by salary desc) rk,
+	dense_rank() over (order by salary desc) drk
+  from emp_rank;
+
+
+EID ENAME SALARY DEPTID  row_number() over (partition by deptid order by salary desc)
+1    a     100    1		1
+2    b     200    2             1
+3    c     100    1             2
+4    d     200    2             2
+5    e      50    1             4
+6    f      60    2             3
+7    g      70    1             3
+
+
+row_number() over (partition by deptid order by salary desc)
+
+	->this will partition based on deptid e.g. for rows having deptid 1 their corresponding rank will be assigned 
+
+
+->->select *, row_number() over (partition by deptid order by salary desc) rn,
+	rank() over (partition by deptid order by salary desc) rk,
+	dense_rank() over (partition by deptid order by salary desc) drk
+  from emp_rank;
+
+*****
+
+8. Display the deptname, name of top 5 earning employees from each dept.
+	
+	---inline view
+
+	->select * from
+		(select ename,deptname,salary ,row_number() over(partition by deptname order by salary desc) as rn 
+		from emp join dept on emp.deptid=dept.deptid) as t
+	 where rn<=5;
+
+*****
+
+
+-------------------------------------------------
+
+CTE -Common table expressions, with queries
+
+	->with tab
+		as
+		(select deptname,ename,salary from emp join dept on emp.deptid=dept.deptid)
+		select deptname , ename from tab
+		where ename='a';
+
+	->with tab
+		as
+		(select 1 as id)
+		select * from tab;
+
+	->with recursive tab
+		as
+		(select 1 as id
+		union all
+		select id+1 from tab where id<10)
+		select * from tab
+	
+		->this will return id till 10 in a tab CTE
+
+	->select randomm()*10000;
+		->gives random values
+
+	->insert into emp table using CTE
+
+		->insert into emp
+			with recursive tab
+			as
+			(select 1 as eid,'a1' ename,random()*100000 salary, 1, deptid
+			union all
+			select eid+1, concat('a',eid+1),random()*100000, mod(eid,3)+1 fromtab where eid<100000 )
+			select * from tab;    
+
+
+----------------------------------------------
+Hstore -Datatype
+	->Used to store key value pairs
+
+	->create extension hstore
+		->extensions are created inside a specific data base no 
+			need to use above command specific to schema
+
+	->create table t_hstore(id int, value hstore);
+
+	->insert into t_hstore
+		values(1,'name=>abc, age=>23,gender=>male')
+
+	->select * from t_hstore;
+
+	->select id, value->'age' as age from t_hstore;
+
+	->->select id, value->'age' as age,value->'name' as name from t_hstore;
+
+
+---------------------------------------------------
+
+Pivoting
+
+	->covert rows to columns
+
+	->select sum(case when deptname='HR' then salary end) HR,
+		sum(case when deptname='IT' then salary end) IT,
+		sum(case when deptname='Finance'  then salary end) Finance
+		from 
+		dept join emp on dept.deptid=emp.deptid;
+
+	->In case you have 100-200 columns and you dont know the categories
+
+	 marks
+
+	a Maths 100
+	a Hindi 200
+	a English 300
+	b Maths 20
+	b HIndi 500
+	b English 400
+	
+	->create extension tablefunc; ---for crosstab
+
+	->select * from crosstab('select student,subject,marks from marks')
+		as final_result(student text,Maths int, Hindi int, English int);
+
+	final Result
+	
+	student maths hindi english
+	a	100	200 300
+	b	20	500 400
+
+------------------------------------------
+Cast
+	->CAST ( expression AS target_type );
+	->expression::type
+	->SELECT CAST(42 AS float8);
+	->SELECT '100'::INTEGER, '01-OCT-2015'::DATE;
+
+	->select cast(100 as text);
+
+------------------------------------------
+
+Running Salary Total
+
+EID	ENAME	SALARY	Runnnig_Salary_Total
+10	J	2000	2000
+11	R	1500	3500
+23	S	1500	5000
+34	E	500	5500
+35	A	200	5700
+
+
+	->select eid,ename,salary, sum(salary) over( order by salary desc 
+		rows between unbounded preceding and current row) running total
+	from emp; 
+
+
+-----------------------------------------
+
+Function
+	->set of program to write some bussiness logic to return some value
+
+
+	->First 'Hello! World' Function
+
+		->create function sf_hello(name varchar(100))
+			returns varchar(100)
+			langauge plpgsql
+			as
+			$$
+			begin
+			
+			return (concat('Hello ', name));
+
+			end;
+			$$;
+
+		->select sf_hello('John')
+
+		->select sf_hello('World')
+
+	->Define a plpgsql function to calculate factorial of a number
+
+		->create functionsf_fact(num int)
+			returns big int
+			langauge plpgsql
+			as
+			$$
+			declare fact bigint;
+			begin
+			fact :=1;
+			
+			for i in 2..num loop
+			fact := fact*i;
+			end loop;
+			return fact;
+			end;
+			$$ ;
+
+		->select sf_fact(5) ; ---120
+			
+	->take input as a number and determine whethere that number is prime or not
+		->function sf_checkprime(num int)
+			returns varchar(100)
+			language plpgsql
+			as
+			$$
+			begin
+			for i in 2..num2 loop
+			if( mod(num,i)=0) then
+			return (concate(num,' is a prime number'));
+			end if;
+			end loop;
+			return (concate(num, ' is not a prime number')); 
+			end;
+			$$;
+
+		->select sf_checkprime(5): --5 is a prime number;
+
+
+
+
+---------------------------------------------------
+Read value from table into variable
+
+	->function which takes input an eid and returns deptname
+		->create function sf_getdept(v_eid int)
+			returns varchar(100)
+			langauge plpgsql
+			as 
+			$$
+			declare dname varchar(100);
+			begin
+			select deptname into dname from emp join dept on emp.deptid=dept.deptid
+			where eid=v_eid; 
+			return dname
+			end;	
+			$$;
+
+		->select sf_getdept(1); ---HR
+
+		->select eid,,ename,, sf_geetdept(eid) deptname from emp
+
+		->select sf_getdept(-1); ---return null
+
+		->If there are 2 rows for 1 eid then it will return 1st row only.
+
+		->if you want to make some changes to existing function use 'replace'
+			->create or replace function sf_getdept(v_eid int)
+			returns varchar(100)
+			langauge plpgsql
+			as 
+			$$
+			declare dname varchar(100);
+			begin
+			select deptname into dname from emp join dept on emp.deptid=dept.deptid
+			where eid=v_eid; 
+			return dname
+			end;	
+			$$;
+
+
+		->if you changed datatype of deptname in table then to change dname data type in function
+			->dname dept.deptname%type;
+
+			->->create or replace function sf_getdept(v_eid int)
+			returns dept.deptname%type  ---gives warning but can be neglected
+			langauge plpgsql
+			as 
+			$$
+			declare dname dept.deptname%type;
+			begin
+			select deptname into dname from emp join dept on emp.deptid=dept.deptid
+			where eid=v_eid; 
+			return dname
+			end;	
+			$$;
+
+
+	->To get the list of all function
+		->\df
+
+----------------------------------------------------
+Cursor	
+	->It is pointer to set of row and fetch data row by row to process data row by row
+	->syntax
+		->declare cursor e.g c1 cursor for [query want to be processed row by row]
+			open c1;
+			loop
+			fetch c1 into [variable declare before opening cursor]
+			exit [condition for cursor to stop the processing];
+			end loop;
+			close c1;
+	->used to traverse through values returned by query having cursor
+
+	->create a function that takes input a deptname and
+	 return name of alll the employees in that dept as a comma
+		seperated list
+		
+		->e.g. if we pass HR then it should return [a,c,f,g,h,i]
+
+		->create or replace function sf_gatelist(dname varchar(100))
+			returns text
+			language plpgsql
+			as
+			$$
+			declare
+				elist text;
+				t_ename varchar(100);
+				c1 cursor from select ename from emp join dept on emp.deptid=dept.deptid where deptname=dname;
+			begin
+				elist:='';
+				open c1;
+				loop
+				fetch c1 into t_ename;
+				exit when t_ename is null;
+				elist=concat(elist,',',t_ename);
+				end loop;
+				close c1;
+				return (ltrim(elist,','));	
+			end;	
+			$$;
+			
+
+
+-------------------------------------------------------------
+
+How to return a table through function
+
+	->create or replace function sf_getdata(dname varchar(100))
+		returns table(v_eid int, v_ename varchar(100),v_salary int)
+		langauge plpgsql
+		as
+		$$
+		begin
+			return query(select eid,ename,salary from emp join dept on emp.deptid=dept.deptid where deptname=dname);
+		end;
+		$$;
+
+	->select * from sf_getdata('HR')
+	->select sf_getdata('HR');
+
+	->select * from dept,sf_getdata(deptname);
+
+	->if you need to make changes in return datatype you need to drop function first
+
+
+	->we can use 'raise notice' to track or debug the function execution
+
+		->create function sf_print(id, int)
+			returns int
+			language plpgsql
+			as
+			$$
+			begin
+			raise notice 'ID: %', id;
+			return id+1;
+			end;
+			$$;
+
+		->select sf_print(1)
+
+
+
+	->write a function that takes input a setence and converts the 
+		sentence into words assuming space as a delimiter/separater
+
+		->select * from sf_splitsent('this is test')
+			this
+			is
+			test
+
+		->simple program to return multiple values from function
+			->create function sf_returntab(num int)
+				returns table(v_num int)
+				language plpgsql
+				as
+				$$
+				begin
+				for i in 1..num loop
+				v_num=i;
+				return next;
+				end loop;
+				end;
+				$$;
+
+			->select sf_returntab(10);
+				--
+				1
+				2
+				3
+				4
+				5
+				5
+				7
+				8
+				9	
+				10
+
+
+
+		->create or replace function sf_splitsent(sent text)
+			returns table(word varchar(200))
+			language plpgsql
+			as
+			$$
+			decare t_word varchar(100);
+			begin
+			t_word:='';
+			for i in 1..length(sent) loop
+			if substring(sent,i,1)=' ' then
+			if length(trim(t_word))>0 then
+			word := t_word;
+			return next;
+			end if;
+
+			t_word:='';
+			else
+			t_word:=concat(t_word,sustring(sent,i,1));
+			end if;
+			end loop;
+			if length(trim(t_word))>0 then
+			word:=t_word;
+			return next;
+			end if;
+			end;	
+			$$
+
+		->select * from sf_splitsent('this is sent'); 
+			--
+			this
+			is
+			sent 
+
+		->select * from sf_splitsent_para('a,b,c',','); 
+			--
+			a
+			b
+			c
+
+ 
+		->create or replace function sf_splitsent_para(sent text,del varchar(10))
+			returns table(word varchar(200))
+			language plpgsql
+			as
+			$$
+			decare t_word varchar(100);
+			begin
+			t_word:='';
+			for i in 1..length(sent) loop
+			if substring(sent,i,1)=del then
+			if length(trim(t_word,del))>0 then
+			word := t_word;
+			return next;
+			end if;
+
+			t_word:='';
+			else
+			t_word:=concat(t_word,sustring(sent,i,1));
+			end if;
+			end loop;
+			if length(trim(t_word,del))>0 then
+			word:=t_word;
+			return next;
+			end if;
+			end;	
+			$$
+
+		->select * from sf_splitsent('this is sent'); 
+			--
+			this
+			is
+			sent 
+
+
+
+
+	->write a function that returns name of all the tables in pulic schema and it's actual row count;
+
+		->create or replace sf_tabcnt()
+			returns table(v_tabname varchar(100),v_rowcnt int)
+			langauge plpgsql
+			as
+			$$
+			declare
+			c1 cursor for select table_name from information_schema.tables where table_schema='public';  
+			begin
+			open c1;
+			loop
+			fetch c1 into v_tabname;
+			exit when v_tabname is null;
+			execute 'select count(*) from ' || v_tabname into v_rowcnt;
+			return next;
+			end loop;
+			close c1;
+			end;
+			$$
+
+		->select sf_tabcnt();
+
+-----------------------------------------------------------------------
+Select query to get the table names 
+	->select table_name from information_schema.tables where table_schema='public';
+
+
+---------------------------------------------------------------------
+
+Optimization Queries
+
+	->create a large size table
+	->create table emp_big
+		(eid int,ename varchar(100),salary int,deptid int,c1 char(1000),c2 char(1000));
+
+		->as we have char datatype size of this table must be greater than 2kb
+
+	->select * from generate_series(1,100);
+		->to generate numbers from 1 to 100
+
+
+	->select generate_series eid,concat('a',,generate_series) ename,random()*100000 as salary,
+		mod(generate_series,3)+1 deptid ,'test' c1, 'test' c2 from generate_series(1,5000000)
+
+	->insert into emp_big
+		select generate_series eid,concat('a',,generate_series) ename,random()*100000 as salary,
+		mod(generate_series,3)+1 deptid ,'test' c1, 'test' c2 from generate_series(1,5000000);
+
+
+
+	->select count(*) from emp_big
+
+	**
+	->TO ENABLE TIMING FOR EACH QUERY USE 
+		-> \timing
+	**
+	**
+	->TO GET THE SIZE EACH TABLE USE
+		-> select pg_size_pretty(pg_relation_size ('emp_big'));
+	**
+
+
+	->select * from emp_big where eid=1;
+		->this will do a 'full table scan'
+		->in psql it is call sequential scan
+
+	**
+	->explain 
+		->this gives sequential scan details in postgresql along with 'cost'
+		->explain gives estimated query plan and will not run the query.
+		
+		->explain select * from emp_big where eid=1;
+		
+		
+			
+	**
+
+	**
+	->explain analyze
+		->this run the query and will give you exact time required for this query to run wit extra details
+
+		->explain analyze select * from emp_big where eid=1; --taking 3 seconds
+	**
+
+
+	**
+	->indexes
+		->In databases for searching to run faster we do indexing on tables of databases
+
+		->Syntax to create index
+			->create index emp_big_eid_idx on emp_big(eid);
+
+		->After creating index on eid column 
+			->select * from emp_big where eid=1; ---taking 0.462 ms 
+
+			->explain analyze select * from emp_big where eid=1;
+				this query now instead of 'sequential scan' use a 'index scan'
+
+		->One can do indexing on some sorted column as well.
+		->if you perform operation(arithmetic or any other) on column it will not use the index
+			but if you perform operations on data it will use index.
+
+		
+		
+		->select * from
+			(select ename,deptname,salary ,row_number() over(partition by deptname order by salary desc) as rn 
+				from emp_big join dept on emp_big.deptid=dept.deptid) as t
+	 			where rn<=5;	
+
+			->this query is taking 15 seconds to run
+
+		->explain analyze
+			select * from
+			(select ename,deptname,salary ,row_number() over(partition by deptname order by salary desc) as rn 
+				from emp_big join dept on emp_big.deptid=dept.deptid) as t
+	 			where rn<=5;
+
+			->now sort is taking a time and has a big cost associated with it (columns - deptname,salary).
+			->also join in emp_big is taking time and has a big cost associated with it (scan on emp_big)
+
+		->create index emp_big_deptid_salary_idx on emp_big(deptid,salary desc,ename);
+
+			->after this it is still taking 16seconds to execute above query
+
+		->explain analyze
+			select * from
+			(select ename,deptname,salary ,row_number() over(partition by emp_big.deptid  order by salary desc) as rn 
+				from emp_big join dept on emp_big.deptid=dept.deptid) as t
+	 			where rn<=5;
+
+			->we change partition by deptname to emp_big.deptid as it gives same result 
+				now query is taking 10 seconds time has been reduced
+
+
+		->TO UPDATE THE STATISTICS ON SOME QUERY TO USE 
+			->analyze emp_big
+				->still taking 10seconds
+
+		->explain analyze
+			select * from
+			(select ename,deptid,salary ,row_number() over(partition by emp_big.deptid  order by salary desc) as rn 
+				from emp_big ) as t
+	 			where rn<=5;
+
+			->Now we can get deptname later but this query is taking 9.7 seconds
+			->query still doing a full table scan
+
+		->In postgres there are some parameters which we need to tune so that query starts runnning fine
+			->show shared_bufferes;
+			->show effective cache size
+				->some times you have to increase these parameters size so 
+					that postgresql has enough memory to run this query.
+		
+		
+	**
+
+---------------------------------------------------------
+
+->In oracle/sql server the update and delete happens in place but in postgres the row is just marked as delete 
+and other is inserted while doing update and delete operations
+
+
+	->It is reccomended that if your doing to many updates and deletes in 
+		postgres you have to remove fragmentation from tables.
+
+	->select pg_size_pretty(pg_relation_size('emp'));
+		--for 1 millions records 50 MB size		
+
+	->update emp set salary=salary+100;
+	
+	->select pg_size_pretty(pg_relation_size('emp'));
+		--100 MB size
+		--to remove this extra data we have to do fragmentations on table by using 
+			->vacuum full emp;
+	**
+	->vacuum full emp;
+	
+	**	
+	->select pg_size_pretty(pg_relation_size('emp'));
+		--50MB
+
+	
+	
+----------------------------------------------------
+
+Merge
+
+
+	->instead of doing two insert and update command we can use merge command to do the task of both commands
+	->to merge data using source table into target table we use merge command
+
+	->create table source_table(id int ,name varchar(100)); 
+	->create table target_table(id int ,name varchar(100)); 
+
+	->insert into source_table values(1,'a'), (2,'b'),(3,'c'),(4,'d')
+	->insert into target_table values(1,'a'), (2,'x')
+
+	->select * from source_table
+	->select * from target_table
+	
+	****
+	->merge into target_table
+		using source_table
+		on target_table.id=source_table.id
+		when matched then
+		update set name=source_table.name
+		when not matched then
+		insert values(source_table.id,source_table.name);
+
+		->after this command both tables should show same data
+
+		->if we do it using two different commands (update then insert)
+		
+		-> update target_table
+			set name=source_table.name
+			from source_table 
+			where source_table.id=target_table.id
+		->insert into target_table select * from source_table where id not in
+			(select id from target_table);
+
+
+	****
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
