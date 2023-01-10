@@ -1,0 +1,643 @@
+Day1
+
+1) => 
+SELECT name,population,area FROM World where area >= 3000000 or population >= 25000000
+===================================
+
+2)=>
+select product_id from Products where low_fats in ('Y') and recyclable in ('Y');
+
+===================================
+
+3)=>
+select name from Customer where referee_id not in (2) or referee_id is null
+
+===================================
+4) =>
+select name as Customers from Customers where id not in (select customerid from Orders )
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 2
+
+1)=>
+
+select employee_id,
+case when employee_id %2 <>0 and substring(name,1,1) !='M' then salary
+    else 0
+end as bonus
+from Employees order by employee_id;
+
+--------------------
+SUBSTRING(string, start, length)
+
+--------------------
+CASE
+    WHEN condition1 THEN result1
+    WHEN condition2 THEN result2
+    WHEN conditionN THEN resultN
+    ELSE result
+END;
+
+--------------------
+
+============================================
+2)=>
+
+update Salary set sex=
+case sex when 'm' then 'f' else 'm' end ;
+
+============================================
+
+3)=>
+delete p1 from Person p1, Person p2
+where p1.email=p2.email and p1.id>p2.id;
+
+
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 3
+
+1)=>
+
+select user_id, concat(upper(substring(name,1,1)),lower(substring(name,2))) as name from Users
+order by user_id;
+
+---------------
+UPPER(text)
+LOWER(text)
+
+SUBSTRING(string, start, length)
+
+CONCAT(string1, string2, ...., string_n)
+---------------
+
+===============================================
+
+2)=>
+
+
+select sell_date,count(distinct product) as num_sold,
+group_concat(distinct product order by product separator ',') as products
+from Activities group by sell_date order by sell_date;
+
+---------------------
+
+GROUP_CONCAT(  DISTINCT expression ORDER BY expression SEPARATOR 'sep')  
+
+
+---------------------
+
+================================================
+
+3)=>
+
+select patient_id, patient_name,conditions from Patients 
+where conditions like '% DIAB1%' or conditions like 'DIAB1%';
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 4
+
+1)=>
+
+select employee_id from Employees where employee_id not in (select employee_id from Salaries)
+union
+select employee_id from Salaries where employee_id not in (select employee_id from Employees)
+order by employee_id asc
+
+---------------
+Nested query
+
+UNION->
+	The UNION operator is used to combine the result-set of two or more SELECT statements.
+
+	Every SELECT statement within UNION must have the same number of columns	
+	The columns must also have similar data types
+	The columns in every SELECT statement must also be in the same order
+
+
+--------------
+=================================================
+
+2)Input: 
+Products table:
++------------+--------+--------+--------+
+| product_id | store1 | store2 | store3 |
++------------+--------+--------+--------+
+| 0          | 95     | 100    | 105    |
+| 1          | 70     | null   | 80     |
++------------+--------+--------+--------+
+Output: 
++------------+--------+-------+
+| product_id | store  | price |
++------------+--------+-------+
+| 0          | store1 | 95    |
+| 0          | store2 | 100   |
+| 0          | store3 | 105   |
+| 1          | store1 | 70    |
+| 1          | store3 | 80    |
++------------+--------+-------+
+
+
+=>
+select product_id, 'store1' as store, store1 as price from Products where store1 is not null
+union
+select product_id, 'store2' as store, store2 as price from Products where store2 is not null
+union
+select product_id, 'store3' as store, store3 as price from Products where store3 is not null
+
+
+=======================================================
+
+3)
+Example 1:
+
+
+Input: 
+Tree table:
++----+------+
+| id | p_id |
++----+------+
+| 1  | null |
+| 2  | 1    |
+| 3  | 1    |
+| 4  | 2    |
+| 5  | 2    |
++----+------+
+Output: 
++----+-------+
+| id | type  |
++----+-------+
+| 1  | Root  |
+| 2  | Inner |
+| 3  | Leaf  |
+| 4  | Leaf  |
+| 5  | Leaf  |
++----+-------+
+Explanation: 
+Node 1 is the root node because its parent node is null and it has child nodes 2 and 3.
+Node 2 is an inner node because it has parent node 1 and child node 4 and 5.
+Nodes 3, 4, and 5 are leaf nodes because they have parent nodes and they do not have child nodes.
+
+----------------------
+CASE
+    WHEN condition1 THEN result1
+    WHEN condition2 THEN result2
+    WHEN conditionN THEN resultN
+    ELSE result
+END;
+----------------------
+
+
+=>
+select id,
+(case when p_id is null then 'Root' 
+when id in ( select p_id from Tree) then 'Inner'
+else 'Leaf' 
+end) type
+from Tree
+
+=======================================================
+
+4)=>
+
+select max(salary) as SecondHighestSalary from Employee where salary not in (select max(salary) from Employee)
+
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 5
+
+1)=>
+1st way-
+
+select firstName,lastName,city,state from Person p left join Address a on p.personId=a.personId
+
+------------------------
+2nd way=
+
+SELECT FirstName,LastName,City,State
+FROM Person
+LEFT JOIN Address
+USING(PersonId)
+------------------------
+
+====================================================
+
+
+2)=>
+select customer_id,count(*) as count_no_trans from Visits where
+visit_id not in (select visit_id from Transactions) group by customer_id 
+order by customer_id desc
+
+
+------------------------
+SELECT v.customer_id, COUNT(v.visit_id) as count_no_trans
+FROM Visits v LEFT JOIN Transactions t ON v.visit_id=t.visit_id
+WHERE t.visit_id IS Null
+GROUP BY v.customer_id
+
+------------------------
+
+
+3)
+=>
+If with distinct keyword,
+
+SELECT DISTINCT author_id AS id FROM Views where author_id = viewer_id ORDER BY id
+
+-------------------------
+If order by first, we need another Select and alias
+
+SELECT id from (SELECT author_id AS id FROM Views where author_id = viewer_id ORDER BY id)a GROUP BY id
+
+-------------------------
+If just with group by (automatically sorted by id)
+
+SELECT author_id AS id FROM Views where author_id = viewer_id GROUP BY id
+
+--------------------------
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 6
+
+1)
+
++----+------------+-------------+
+| id | recordDate | temperature |
++----+------------+-------------+
+| 1  | 2015-01-01 | 10          |
+| 2  | 2015-01-02 | 25          |
+| 3  | 2015-01-03 | 20          |
+| 4  | 2015-01-04 | 30          |
++----+------------+-------------+
+Output: 
++----+
+| id |
++----+
+| 2  |
+| 4  |
++----+
+Explanation: 
+In 2015-01-02, the temperature was higher than the previous day (10 -> 25).
+In 2015-01-04, the temperature was higher than the previous day (20 -> 30).
+
+
+=>
+select w1.id  as Id from Weather w1,Weather w2 
+where datediff(w1.recordDate,w2.recordDate)=1 and w1.temperature>w2.temperature;
+
+------------------------------
+
+DATEDIFF(interval, date1, date2)
+
+
+interval	Required. The part to return. Can be one of the following values:
+		year, yyyy, yy = Year
+		quarter, qq, q = Quarter
+		month, mm, m = month
+		dayofyear = Day of the year
+		day, dy, y = Day
+		week, ww, wk = Week
+		weekday, dw, w = Weekday
+		hour, hh = hour
+		minute, mi, n = Minute
+		second, ss, s = Second
+		millisecond, ms = Millisecond
+
+------------------------------
+
+============================================================
+
+2)=>
+
+select name from SalesPerson where sales_id not in 
+(select sales_id from Orders where com_id in 
+(select com_id from Company where name='RED'))
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 7
+
+1)
+--------------
+The BETWEEN operator selects values within a given range. The values can be numbers, text, or dates.
+
+The BETWEEN operator is inclusive: begin and end values are included. 
+
+BETWEEN Syntax
+SELECT column_name(s)
+FROM table_name
+WHERE column_name BETWEEN value1 AND value2;
+
+--------------
+******
+=>
+		select activity_date as day, count(distinct user_id) as active_users from Activity
+		where activity_date <='2019-07-27' and activity_date>'2019-06-27' group by activity_date
+
+
+=>
+		select activity_date as day, count(distinct user_id) as active_users from Activity
+		where activity_date <='2019-07-27' and 
+		activity_date > date_sub('2019-7-27', interval 1 month) group by activity_date
+******
+---------------
+
+
+DATEPART(interval, date)
+
+SELECT DATEPART(month, '2017/08/25') AS DatePartInt;
+
+
+--------------
+
+DATE_SUB(date, INTERVAL value interval)
+
+
+Parameter Values
+
+Parameter	Description
+date	Required. The date to be modified
+value	Required. The value of the time/date interval to subtract. Both positive and negative values are allowed
+
+interval	Required. The type of interval to subtract. Can be one of the following values:
+		MICROSECOND
+		SECOND
+		MINUTE
+		HOUR
+		DAY
+		WEEK
+		MONTH
+		QUARTER
+		YEAR
+		SECOND_MICROSECOND
+		MINUTE_MICROSECOND
+		MINUTE_SECOND
+		HOUR_MICROSECOND
+		HOUR_SECOND
+		HOUR_MINUTE
+		DAY_MICROSECOND
+		DAY_SECOND
+		DAY_MINUTE
+		DAY_HOUR
+		YEAR_MONTH
+
+--------------
+
+DATEDIFF(interval, date1, date2)
+
+
+interval	Required. The part to return. Can be one of the following values:
+		year, yyyy, yy = Year
+		quarter, qq, q = Quarter
+		month, mm, m = month
+		dayofyear = Day of the year
+		day, dy, y = Day
+		week, ww, wk = Week
+		weekday, dw, w = Weekday
+		hour, hh = hour
+		minute, mi, n = Minute
+		second, ss, s = Second
+		millisecond, ms = Millisecond
+
+--------------
+
+
+========================================================
+
+
+2)
+
+=>select date_id,make_name,count(distinct lead_id) as unique_leads,
+count(distinct partner_id) as unique_partners
+from DailySales group by 1,2;
+
+=======================================================
+
+3)
+
+=> 
+
+select user_id,count(follower_id) as followers_count from Followers group by 1 order by user_id;
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 8
+
+1)
+=>
+select customer_number from Orders group by customer_number having
+count(order_number) >= ALL(select count(order_number) from Orders );
+
+-------------
+SELECT customer_number 
+FROM Orders
+GROUP BY customer_number
+ORDER BY COUNT(order_number) DESC
+LIMIT 1;
+--------------
+
+======================================================
+
+2)
+=>
+select player_id,min(event_date) as first_login from Activity group by player_id
+
+
+======================================================
+
+3)=>
+
+select  user_id,max(time_stamp) as last_stamp from Logins where year(time_stamp)=2020 group by user_id
+
+------------------
+To get the year from Timestamp use 
+--year()-- function
+ 
+-----------------
+
+===================================================
+
+4)
+=>select event_day as day,emp_id,sum(out_time-in_time) as total_time from Employees group by event_day,emp_id;
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 9
+
+1)=>
+
+select stock_name, sum(
+    case when operation='Buy' then -price
+         when operation='Sell' then price
+    end
+) as capital_gain_loss from Stocks group by stock_name
+
+
+================================================
+
+2)=>
+select name, 
+sum(case when u.id = r.user_id then distance
+else 0 end) as travelled_distance
+from users u
+left join rides r
+on u.id = r.user_id
+group by u.id
+order by sum(distance) desc, name asc
+
+
+===============================================
+
+3)
+=>
+
+select u.user_id as buyer_id,u.join_date,
+(case when u.user_id=o.buyer_id then count(o.order_id)
+    else 0
+ end) as orders_in_2019 
+from Users u left outer join Orders o on u.user_id=o.buyer_id 
+and year(o.order_date)=2019   # #If you use 'where' then those who doesn't have 2019 sale won't be joined at all
+group by u.user_id,u.join_date 
+
+
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+Day 10
+
+1)=>
+
+select email from Person group by email having count(email)>1
+
+
+===============================================
+
+2)=>
+
+select actor_id,director_id  from ActorDirector group by actor_id,director_id having count(timestamp)>=3
+
+
+===============================================
+
+3)=>
+
+select u.name as name,sum(amount) as balance from Users u join Transactions t on u.account=t.account 
+group by u.name having sum(amount)>10000 
+
+
+===============================================
+
+4)
+=>
+select distinct
+p.product_id,
+p.product_name
+from Product p
+left join Sales s on p.product_id = s.product_id
+where sale_date between '2019-01-01' and '2019-03-31'
+and p.product_id not in (select distinct product_id from Sales where sale_date > '2019-03-31' or sale_date < '2019-01-01')
+
+---------------------
+SELECT Product.product_id, Product.product_name FROM Product 
+JOIN Sales 
+ON Product.product_id = Sales.product_id 
+GROUP BY Sales.product_id 
+HAVING MIN(Sales.sale_date) >= "2019-01-01" AND MAX(Sales.sale_date) <= "2019-03-31";
+--------------------
+
+
+
+=======================================================================================================
+=======================================================================================================
+*******************************************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
